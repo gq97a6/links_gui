@@ -1,33 +1,56 @@
 package net.hostunit
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
+import kotlinx.browser.document
+import net.hostunit.pages.CodePage
+import net.hostunit.pages.EditPage
+import net.hostunit.pages.LoginPage
+import net.hostunit.theme.Theme
 
-import kotlinproject.composeapp.generated.resources.Res
-import kotlinproject.composeapp.generated.resources.compose_multiplatform
+@Composable
+fun String.match(pattern: String, content: @Composable (List<String>) -> Unit): Boolean {
+    //Return if pattern size does not match
+    if (pattern.count { it == '/' } != this.count { it == '/' } - 3) return false
+
+    //Store values from path that are marked with question mark in the pattern
+    val extracted = mutableListOf<String>()
+
+    //Split into parts
+    val patternPaths = pattern.split("/")
+    val pathParts = this.split("/").drop(3)
+
+    pathParts.forEachIndexed { i, part ->
+        if (patternPaths[i] == "?") extracted.add(pathParts[i])
+        else if (patternPaths[i] != part) return false
+    }
+
+    content(extracted)
+
+    return true
+}
 
 @Composable
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { "hello" }
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+    Theme {
+        Box(
+            modifier = Modifier.fillMaxSize().background(color = colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            document.URL.apply {
+                when {
+                    match("") { EditPage() } -> {}
+                    match("") { CodePage() } -> {}
+                    match("login") { LoginPage() } -> {}
+                    match("edit") {  } -> {}
+                    match("login/?") { LoginPage(it.first()) } -> {}
+                    match("edit/?") {  } -> {}
+                    match("?") { CodePage(it.first()) } -> {}
                 }
             }
         }
