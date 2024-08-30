@@ -4,14 +4,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
+import kotlinx.browser.window
 import net.hostunit.pages.CodePage
 import net.hostunit.pages.EditPage
 import net.hostunit.pages.LoginPage
 import net.hostunit.theme.Theme
+import kotlin.random.Random
 
 @Composable
 fun String.match(pattern: String, content: @Composable (List<String>) -> Unit): Boolean {
@@ -37,6 +41,7 @@ fun String.match(pattern: String, content: @Composable (List<String>) -> Unit): 
 
 @Composable
 fun App() {
+
     Theme {
         Box(
             modifier = Modifier.fillMaxSize().background(color = colorScheme.background),
@@ -47,12 +52,19 @@ fun App() {
                     match("") { EditPage() } -> {}
                     match("") { CodePage() } -> {}
                     match("login") { LoginPage() } -> {}
-                    match("edit") {  } -> {}
+                    match("edit") { EditPage() } -> {}
                     match("login/?") { LoginPage(it.first()) } -> {}
-                    match("edit/?") {  } -> {}
+                    match("edit/?") { EditPage(it.first()) } -> {}
                     match("?") { CodePage(it.first()) } -> {}
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun main() {
+    ComposeViewport(document.body!!) {
+        App()
     }
 }
