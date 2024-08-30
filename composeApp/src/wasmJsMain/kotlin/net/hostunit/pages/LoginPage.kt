@@ -15,7 +15,7 @@ import links_gui.composeapp.generated.resources.gp_logo_orange
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun LoginPage(param: String? = null) = Column {
+fun BoxScope.LoginPage(param: String? = null) = Column {
 
     var login by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
