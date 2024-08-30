@@ -4,22 +4,23 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.js.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.*
-import kotlinx.browser.window
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import net.hostunit.classes.Match
-import net.hostunit.classes.Player
+import net.hostunit.classes.Address
 import net.hostunit.classes.User
 
 object API {
-    private const val URL = "https://team.hostunit.net"
+    private const val URL = "http://localhost"
 
-    //private const val URL = "http://localhost"
     private val client = HttpClient(Js) {
+        install(HttpCookies) {
+            storage = AcceptAllCookiesStorage()
+        }
         install(ContentNegotiation) {
             json(Json {
                 encodeDefaults = true
@@ -33,140 +34,100 @@ object API {
         }
     }
 
-    suspend fun getCurrentMatch(): Match {
-        return try {
-            val response = client.get("$URL/api/match/current")
-            return if (response.status == HttpStatusCode.OK) response.body<Match>() else Match()
-        } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
-            Match()
-        }
-    }
-
-    suspend fun getRandomMatch(): Match {
-        return try {
-            val response = client.get("$URL/api/match/random")
-            return if (response.status == HttpStatusCode.OK) response.body<Match>() else Match()
-        } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
-            Match()
-        }
-    }
-
-    suspend fun postMatch(index: Int) {
+    suspend fun getAddress(code: String, onFail: (HttpStatusCode?) -> Unit = {}): Address {
         try {
-            val response = client.post("$URL/api/match/current") {
-                setBody("$index")
-            }
-            window.alert(if (response.status == HttpStatusCode.OK) "OK" else "ERROR")
+            val response = client.get("$URL/address/$code")
+            if (response.status == HttpStatusCode.OK) return response.body()
+
+            onFail(response.status)
+            return Address()
         } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
+            onFail(null)
+            return Address()
         }
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun postPlayers(players: List<Player>) {
+    suspend fun postAddress(address: Address, onFail: (HttpStatusCode?) -> Unit = {}): String {
         try {
-            // Manually serialize the user object to JSON string
-            val jsonBody = Json.encodeToString(players)
+            val jsonBody = Json.encodeToString(address)
 
-            val response = client.post("$URL/api/player") {
-                contentType(ContentType.Application.Json)
-                body = jsonBody
-            }
-            window.alert(if (response.status == HttpStatusCode.OK) "OK" else "ERROR")
-        } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
-        }
-    }
-
-    suspend fun getPlayers(): List<Player> {
-        return try {
-            val response = client.get("$URL/api/player")
-            return if (response.status == HttpStatusCode.OK) response.body<List<Player>>() else listOf()
-        } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
-            listOf()
-        }
-    }
-
-    @OptIn(InternalAPI::class)
-    suspend fun getPlayerSummary(uuids: List<String>): String {
-        return try {
-            // Manually serialize the user object to JSON string
-            val jsonBody = Json.encodeToString(uuids)
-
-            val response = client.post("$URL/api/player/text") {
+            val response = client.post("$URL/address") {
                 contentType(ContentType.Application.Json)
                 body = jsonBody
             }
 
-            if (response.status == HttpStatusCode.OK) response.body<String>() else ""
+            if (response.status == HttpStatusCode.OK) return response.body()
+
+            onFail(response.status)
+            return ""
         } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
-            ""
+            onFail(null)
+            return ""
         }
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun postPool(uuids: List<String>) {
+    suspend fun putAddress(address: Address, onFail: (HttpStatusCode?) -> Unit = {}): Boolean {
         try {
-            // Manually serialize the user object to JSON string
-            val jsonBody = Json.encodeToString(uuids)
+            val jsonBody = Json.encodeToString(address)
 
-            val response = client.post("$URL/api/pool") {
+            val response = client.put("$URL/address/${address.code}") {
                 contentType(ContentType.Application.Json)
                 body = jsonBody
             }
-            window.alert(if (response.status == HttpStatusCode.OK) "OK" else "ERROR")
-        } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
-        }
-    }
 
-    suspend fun getPool(): List<Match> {
-        return try {
-            val response = client.get("$URL/api/pool")
-            return if (response.status == HttpStatusCode.OK) response.body<List<Match>>() else listOf()
-        } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
-            listOf()
-        }
-    }
+            if (response.status == HttpStatusCode.OK) return response.body()
 
-    suspend fun getPoolSummary(): String {
-        return try {
-            val response = client.get("$URL/api/pool")
-            return if (response.status == HttpStatusCode.OK) response.body<String>() else ""
+            onFail(response.status)
+            return false
         } catch (e: Exception) {
-            println(e.message)
-            window.alert("ERROR")
-            ""
+            onFail(null)
+            return false
         }
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun login(user: User) {
+    suspend fun login(user: User, onFail: (HttpStatusCode?) -> Unit = {}): Boolean {
         try {
-            // Manually serialize the user object to JSON string
             val jsonBody = Json.encodeToString(user)
 
-            val response = client.post("$URL/api/auth/login") {
+            val response = client.post("$URL/login") {
                 contentType(ContentType.Application.Json)
+                header(HttpHeaders.Cookie, "withCredentials=true")
                 body = jsonBody
             }
-            window.alert(if (response.status == HttpStatusCode.OK) "OK" else "ERROR")
+
+            if (response.status == HttpStatusCode.OK) return true
+
+            onFail(response.status)
+            return false
         } catch (e: Exception) {
             println(e.message)
-            window.alert("ERROR")
+            onFail(null)
+            return false
         }
     }
+
+    suspend fun loginToken(onFail: (HttpStatusCode?) -> Unit = {}): Boolean {
+        try {
+            val response = client.post("$URL/login")
+            if (response.status == HttpStatusCode.OK) return true
+
+            onFail(response.status)
+            return false
+        } catch (e: Exception) {
+            onFail(null)
+            return false
+        }
+    }
+
+    //suspend fun getList(): List<Address>? {
+    //    return try {
+    //        val response = client.get("$URL/list")
+    //        return if (response.status == HttpStatusCode.OK) response.body() else null
+    //    } catch (e: Exception) {
+    //        null
+    //    }
+    //}
 }

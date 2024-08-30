@@ -10,14 +10,9 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.unit.dp
-import links_gui.composeapp.generated.resources.Res
-import links_gui.composeapp.generated.resources.gp_logo_gray
-import links_gui.composeapp.generated.resources.gp_logo_orange
-import net.hostunit.Logo
-import net.hostunit.adaptWidth
-import net.hostunit.isMobile
-import org.jetbrains.compose.resources.painterResource
-import kotlin.random.Random
+import kotlinx.coroutines.delay
+import net.hostunit.*
+import net.hostunit.classes.User
 
 @Composable
 fun LinkSlot(i: Int) = Column {
@@ -48,19 +43,20 @@ fun LinkSlot(i: Int) = Column {
 
 @Composable
 fun BoxScope.EditPage(param: String? = null) {
+
     var message by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf(param ?: "") }
+    var direct by remember { mutableStateOf(false) }
+    var permament by remember { mutableStateOf(false) }
 
-    Column(Modifier.onKeyEvent {
-        if (it.key.keyCode == Key.Enter.keyCode) {
-            message = Random.nextInt().toString()
-            return@onKeyEvent true
-        }
-        return@onKeyEvent false
-    }) {
+    //Modifier.onKeyEvent {
+    //    if (it.key.keyCode == Key.Enter.keyCode) {
+    //        return@onKeyEvent true
+    //    }
+    //    return@onKeyEvent false
+    //}
 
-        var code by remember { mutableStateOf(param ?: "") }
-        var direct by remember { mutableStateOf(false) }
-        var permament by remember { mutableStateOf(false) }
+    Column {
 
         Row(
             modifier = Modifier.adaptWidth(0.9f, 800.dp),
@@ -134,4 +130,6 @@ fun BoxScope.EditPage(param: String? = null) {
             }
         }
     }
+
+    Notification(message) { message = "" }
 }
