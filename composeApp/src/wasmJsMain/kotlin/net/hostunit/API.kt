@@ -4,23 +4,20 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.js.*
 import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.*
+import kotlinx.browser.window
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.hostunit.classes.Address
 import net.hostunit.classes.User
 
 object API {
-    private const val URL = "http://localhost"
+    private val URL = window.location.let { it.protocol + "//" + it.hostname }
 
     private val client = HttpClient(Js) {
-        install(HttpCookies) {
-            storage = AcceptAllCookiesStorage()
-        }
         install(ContentNegotiation) {
             json(Json {
                 encodeDefaults = true
@@ -34,100 +31,82 @@ object API {
         }
     }
 
-    suspend fun getAddress(code: String, onFail: (HttpStatusCode?) -> Unit = {}): Address {
+    suspend fun getAddress(code: String, onSuccess: suspend (Address) -> Unit = {}): HttpStatusCode? {
         try {
             val response = client.get("$URL/address/$code")
-            if (response.status == HttpStatusCode.OK) return response.body()
-
-            onFail(response.status)
-            return Address()
+            if (response.status != HttpStatusCode.OK) return response.status
+            onSuccess(response.body())
         } catch (e: Exception) {
-            onFail(null)
-            return Address()
+            return null
         }
+
+        return HttpStatusCode.OK
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun postAddress(address: Address, onFail: (HttpStatusCode?) -> Unit = {}): String {
+    suspend fun postAddress(address: Address, onSuccess: suspend (String) -> Unit = {}): HttpStatusCode? {
         try {
-            val jsonBody = Json.encodeToString(address)
-
             val response = client.post("$URL/address") {
+                body = Json.encodeToString(address)
                 contentType(ContentType.Application.Json)
-                body = jsonBody
             }
 
-            if (response.status == HttpStatusCode.OK) return response.body()
-
-            onFail(response.status)
-            return ""
+            if (response.status != HttpStatusCode.OK) return response.status
+            onSuccess(response.body())
         } catch (e: Exception) {
-            onFail(null)
-            return ""
+            return null
         }
+
+        return HttpStatusCode.OK
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun putAddress(address: Address, onFail: (HttpStatusCode?) -> Unit = {}): Boolean {
+    suspend fun putAddress(address: Address, onSuccess: suspend () -> Unit = {}): HttpStatusCode? {
         try {
-            val jsonBody = Json.encodeToString(address)
-
             val response = client.put("$URL/address/${address.code}") {
+                body = Json.encodeToString(address)
                 contentType(ContentType.Application.Json)
-                body = jsonBody
             }
 
-            if (response.status == HttpStatusCode.OK) return response.body()
-
-            onFail(response.status)
-            return false
+            if (response.status != HttpStatusCode.OK) return response.status
+            onSuccess()
         } catch (e: Exception) {
-            onFail(null)
-            return false
+            return null
         }
+
+        return HttpStatusCode.OK
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun login(user: User, onFail: (HttpStatusCode?) -> Unit = {}): Boolean {
+    suspend fun login(user: User, onSuccess: suspend () -> Unit = {}): HttpStatusCode? {
         try {
-            val jsonBody = Json.encodeToString(user)
-
             val response = client.post("$URL/login") {
+                body = Json.encodeToString(user)
                 contentType(ContentType.Application.Json)
-                header(HttpHeaders.Cookie, "withCredentials=true")
-                body = jsonBody
             }
 
-            if (response.status == HttpStatusCode.OK) return true
-
-            onFail(response.status)
-            return false
+            if (response.status != HttpStatusCode.OK) return response.status
+            onSuccess()
         } catch (e: Exception) {
-            println(e.message)
-            onFail(null)
-            return false
+            return null
         }
+
+        return HttpStatusCode.OK
     }
 
-    suspend fun loginToken(onFail: (HttpStatusCode?) -> Unit = {}): Boolean {
+    suspend fun loginToken(onSuccess: suspend () -> Unit = {}): HttpStatusCode? {
         try {
             val response = client.post("$URL/login")
-            if (response.status == HttpStatusCode.OK) return true
-
-            onFail(response.status)
-            return false
+            if (response.status != HttpStatusCode.OK) return response.status
+            onSuccess()
         } catch (e: Exception) {
-            onFail(null)
-            return false
+            return null
         }
+
+        return HttpStatusCode.OK
     }
 
-    //suspend fun getList(): List<Address>? {
-    //    return try {
-    //        val response = client.get("$URL/list")
-    //        return if (response.status == HttpStatusCode.OK) response.body() else null
-    //    } catch (e: Exception) {
-    //        null
-    //    }
-    //}
+    suspend infix fun HttpStatusCode?.onFail(action: suspend (HttpStatusCode?) -> Unit) {
+        if (this != HttpStatusCode.OK) action(this)
+    }
 }

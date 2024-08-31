@@ -6,13 +6,10 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import net.hostunit.*
-import net.hostunit.classes.User
+import net.hostunit.Logo
+import net.hostunit.adaptWidth
+import net.hostunit.isMobile
 
 @Composable
 fun LinkSlot(i: Int) = Column {
@@ -44,7 +41,7 @@ fun LinkSlot(i: Int) = Column {
 @Composable
 fun BoxScope.EditPage(param: String? = null) {
 
-    var message by remember { mutableStateOf("") }
+    //var message by remember { mutableStateOf("") }
     var code by remember { mutableStateOf(param ?: "") }
     var direct by remember { mutableStateOf(false) }
     var permament by remember { mutableStateOf(false) }
@@ -131,5 +128,5 @@ fun BoxScope.EditPage(param: String? = null) {
         }
     }
 
-    Notification(message) { message = "" }
+    //Notification(message) { message = "" }
 }

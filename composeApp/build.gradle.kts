@@ -46,3 +46,5 @@ kotlin {
         }
     }
 }
+
+//.\gradlew clean; .\gradlew wasmJsBrowserDistribution; copy ./composeApp/build/dist/wasmJs/productionExecutable/* ../links_server/src/main/resources/META-INF/resources/ -R -Force

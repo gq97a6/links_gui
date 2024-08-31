@@ -9,10 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.browser.window
@@ -24,15 +25,29 @@ import org.jetbrains.compose.resources.painterResource
 
 val isMobile = window.innerHeight.toDouble() / window.innerWidth.toDouble() > 1f
 
-fun Modifier.adaptWidth(mobile: Float, desktop: Dp) = if (isMobile) this.fillMaxWidth(mobile) else this.width(desktop)
-fun Modifier.adaptHeight(mobile: Float, desktop: Dp) = if (isMobile) this.fillMaxHeight(mobile) else this.height(desktop)
+fun Modifier.adaptWidth(mobile: Float, desktop: Dp): Modifier {
+    return if (isMobile) this.fillMaxWidth(mobile)
+    else this.width(desktop)
+}
 
-@OptIn(ExperimentalAnimationApi::class)
+fun Modifier.adaptHeight(mobile: Float, desktop: Dp): Modifier {
+    return if (isMobile) this.fillMaxHeight(mobile)
+    else this.height(desktop)
+}
+
+fun Modifier.onEnter(action: () -> Unit) = this.onKeyEvent {
+    if (it.key.keyCode == Key.Enter.keyCode) {
+        action()
+        return@onKeyEvent true
+    }
+    return@onKeyEvent false
+}
+
 @Composable
-fun BoxScope.Notification(text: String, onHide: () -> Unit) {
+fun BoxScope.Notification(text: String, trigger: Boolean) {
     var isShown by remember { mutableStateOf(false) }
 
-    if (text.isNotEmpty()) LaunchedEffect(text) {
+    if (text.isNotEmpty()) LaunchedEffect(trigger) {
         isShown = true
         delay(3000)
         isShown = false
@@ -48,8 +63,6 @@ fun BoxScope.Notification(text: String, onHide: () -> Unit) {
             Box(Modifier.fillMaxHeight().padding(horizontal = 50.dp), contentAlignment = Alignment.Center) {
                 Text(text, fontSize = 20.sp, fontWeight = FontWeight.Medium, color = colorScheme.primary)
             }
-
-            if (!isShown && transition.currentState == transition.targetState) onHide()
         }
     }
 }
