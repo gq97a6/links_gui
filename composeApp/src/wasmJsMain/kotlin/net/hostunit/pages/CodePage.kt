@@ -12,22 +12,44 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
+import kotlinx.browser.window
+import kotlinx.coroutines.launch
 import net.hostunit.*
+import net.hostunit.API.onFail
 import net.hostunit.classes.Address
-import net.hostunit.classes.User
+import net.hostunit.classes.Link
 
 @Composable
-fun RowScope.LinkCard(i: Int) {
+fun RowScope.LinkCard(i: Int, address: Address, notify: (String) -> Unit) {
     Box(
         Modifier
             .weight(1f)
             .aspectRatio(1f)
+            .alpha(if (address.links.size > i) 1f else 0.3f)
             .border(1.dp, colorScheme.primaryContainer, shapes.large)
-            .clickable { },
+            .clickable(enabled = address.links.size > i) {
+                when (address.links[i].action) {
+                    Link.Action.COPY -> {
+                        // Paste payload into clipboard
+                        window.navigator.clipboard.writeText(address.links[i].payload)
+                        notify("Przeniesiono do schowka")
+                    }
+
+                    Link.Action.LINK -> {
+                        // Redirect current tab to payload
+                        window.location.href = address.links[i].payload
+                    }
+
+                    Link.Action.TAB -> {
+                        // Open new tab with payload
+                        window.open(address.links[i].payload, "_blank")
+                    }
+                }
+            },
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -40,70 +62,33 @@ fun RowScope.LinkCard(i: Int) {
 }
 
 @Composable
-fun SearchBar(code: String, onChange: (String) -> Unit) {
-    Column {
-        OutlinedTextField(
-            code,
-            onValueChange = onChange,
-            label = { Text("Kod") },
-            modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth(0.7f).padding(top = 12.dp),
-        )
+fun BoxScope.CodePage(param: String = "") {
 
-        FilledTonalButton(
-            modifier = Modifier.widthIn(max = 500.dp).fillMaxWidth(0.6f).padding(top = 5.dp),
-            onClick = { }
-        ) {
-            Text(text = "Potwierdź")
-        }
-    }
-}
+    var code by remember { mutableStateOf(param.uppercase().filter { it.isDigit() || it.isLetter() }) }
+    var address by remember { mutableStateOf(null as Address?) }
+    var cardsShown by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-@Composable
-fun BoxScope.CodePage(param: String? = null) {
+    var notiPayload by remember { mutableStateOf("") }
+    var notiTrigger by remember { mutableStateOf(false) }
 
-    var message by remember { mutableStateOf("") }
-    var code by remember { mutableStateOf(param ?: "") }
-    var isShown by remember { mutableStateOf(true) }
-
-    LaunchedEffect("key") {
-        message = "Hello!"
-
-        delay(3000)
-
-        API.login(User("user", "1234")) {
-            message = "Login fail: ${it?.value}"
-        }.let {
-            if (it) message = "Login successfully"
-        }
-
-        delay(3000)
-
-        API.loginToken {
-            message = "Relogin fail: ${it?.value}"
-        }.let {
-            if (it) message = "Relogin successfully"
-        }
-
-        delay(3000)
-
-        var address: Address? = null
-
-        API.getAddress("1234") {
-            message = "Get address fail: ${it?.value}"
-        }.let {
-            if (it.code == "1234") {
-                message = "Get address success"
+    fun onSearch(code: String) {
+        scope.launch {
+            if (code.isNotEmpty()) API.getAddress(code) {
                 address = it
+                cardsShown = true
+                window.history.replaceState(null, "", "/$code")
+            } onFail {
+                window.history.replaceState(null, "", "/")
+                cardsShown = false
+                notiPayload = "Ten adres nie istnieje"
+                notiTrigger = !notiTrigger
             }
         }
+    }
 
-        delay(3000)
-
-        API.postAddress(Address(code = "6969", temporary = true)) {
-            message = "Post address fail: ${it?.value}"
-        }.let {
-            if (it.isNotBlank()) message = "Post address success"
-        }
+    LaunchedEffect("key") {
+        if (code.isNotEmpty()) onSearch(code)
     }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -121,36 +106,43 @@ fun BoxScope.CodePage(param: String? = null) {
                 OutlinedTextField(
                     code,
                     onValueChange = { value ->
+                        if (code != value) {
+                            window.history.replaceState(null, "", "/")
+                            cardsShown = false
+                        }
                         code = value.uppercase().filter { it.isDigit() || it.isLetter() }
-                        isShown = code == "Z3Q5"
                     },
                     label = { Text("Kod") },
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .onEnter { onSearch(code) },
                 )
 
                 FilledTonalButton(
                     modifier = Modifier.fillMaxWidth(.7f).padding(top = 5.dp),
-                    onClick = { }
+                    onClick = { onSearch(code) }
                 ) {
                     Text(text = "Potwierdź")
                 }
             }
         }
 
-        AnimatedVisibility(isShown) {
-            Row(Modifier.padding(top = 80.dp)) {
-                Spacer(Modifier.weight(0.4f))
-                LinkCard(1)
-                Spacer(Modifier.weight(0.4f))
-                LinkCard(2)
-                Spacer(Modifier.weight(0.4f))
-                LinkCard(3)
-                Spacer(Modifier.weight(0.4f))
-                LinkCard(4)
-                Spacer(Modifier.weight(0.4f))
+        AnimatedVisibility(cardsShown) {
+            address?.let { address ->
+                Row(Modifier.padding(top = 80.dp)) {
+                    repeat(4) {
+                        Spacer(Modifier.weight(0.4f))
+                        LinkCard(it, address) {
+                            notiPayload = it
+                            notiTrigger = !notiTrigger
+                        }
+                    }
+                    Spacer(Modifier.weight(0.4f))
+                }
             }
         }
     }
 
-    Notification(message) { message = "" }
+    Notification(notiPayload, notiTrigger)
 }
