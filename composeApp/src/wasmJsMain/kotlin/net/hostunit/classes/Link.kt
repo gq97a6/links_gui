@@ -8,5 +8,5 @@ class Link(
     var action: Action = Action.TAB,
 ) {
     @Serializable
-    enum class Action { COPY, LINK, TAB }
+    enum class Action { TAB, LINK, COPY }
 }

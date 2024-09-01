@@ -7,6 +7,8 @@ import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.unit.dp
 import kotlinx.browser.document
 import net.hostunit.pages.CodePage
 import net.hostunit.pages.EditPage
@@ -33,6 +35,15 @@ fun String.match(pattern: String, content: @Composable (List<String>) -> Unit): 
     content(extracted)
 
     return true
+}
+
+fun String.parseCode() = this.uppercase().filter { it.isDigit() || it.isLetter() }
+
+fun cookieExists(cookieName: String): Boolean {
+    if (document.cookie.isEmpty()) return false
+    return document.cookie.split("; ").any {
+        it.substringBefore('=') == cookieName
+    }
 }
 
 @Composable

@@ -29,9 +29,9 @@ fun RowScope.LinkCard(i: Int, address: Address, notify: (String) -> Unit) {
         Modifier
             .weight(1f)
             .aspectRatio(1f)
-            .alpha(if (address.links.size > i) 1f else 0.3f)
+            .alpha(if (!address.links.getOrNull(i)?.payload.isNullOrBlank()) 1f else 0.3f)
             .border(1.dp, colorScheme.primaryContainer, shapes.large)
-            .clickable(enabled = address.links.size > i) {
+            .clickable(enabled = !address.links.getOrNull(i)?.payload.isNullOrBlank()) {
                 when (address.links[i].action) {
                     Link.Action.COPY -> {
                         // Paste payload into clipboard
@@ -64,7 +64,7 @@ fun RowScope.LinkCard(i: Int, address: Address, notify: (String) -> Unit) {
 @Composable
 fun BoxScope.CodePage(param: String = "") {
 
-    var code by remember { mutableStateOf(param.uppercase().filter { it.isDigit() || it.isLetter() }) }
+    var code by remember { mutableStateOf(param.parseCode()) }
     var address by remember { mutableStateOf(null as Address?) }
     var cardsShown by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -76,6 +76,10 @@ fun BoxScope.CodePage(param: String = "") {
         scope.launch {
             if (code.isNotEmpty()) API.getAddress(code) {
                 address = it
+
+                //Use first link if address is direct
+                if (it.direct) window.location.href = it.links[0].payload
+
                 cardsShown = true
                 window.history.replaceState(null, "", "/$code")
             } onFail {
@@ -87,9 +91,7 @@ fun BoxScope.CodePage(param: String = "") {
         }
     }
 
-    LaunchedEffect("key") {
-        if (code.isNotEmpty()) onSearch(code)
-    }
+    LaunchedEffect("key") { if (code.isNotEmpty()) onSearch(code) }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
@@ -110,7 +112,7 @@ fun BoxScope.CodePage(param: String = "") {
                             window.history.replaceState(null, "", "/")
                             cardsShown = false
                         }
-                        code = value.uppercase().filter { it.isDigit() || it.isLetter() }
+                        code = value.parseCode()
                     },
                     label = { Text("Kod") },
                     modifier = Modifier

@@ -45,6 +45,8 @@ object API {
 
     @OptIn(InternalAPI::class)
     suspend fun postAddress(address: Address, onSuccess: suspend (String) -> Unit = {}): HttpStatusCode? {
+        checkAuth(address.code)
+
         try {
             val response = client.post("$URL/address") {
                 body = Json.encodeToString(address)
@@ -52,6 +54,10 @@ object API {
             }
 
             if (response.status != HttpStatusCode.OK) return response.status
+            if (response.status == HttpStatusCode.Unauthorized) {
+                window.location.href = "/login${address.code}"
+                return response.status
+            }
             onSuccess(response.body())
         } catch (e: Exception) {
             return null
@@ -62,6 +68,8 @@ object API {
 
     @OptIn(InternalAPI::class)
     suspend fun putAddress(address: Address, onSuccess: suspend () -> Unit = {}): HttpStatusCode? {
+        checkAuth(address.code)
+
         try {
             val response = client.put("$URL/address/${address.code}") {
                 body = Json.encodeToString(address)
@@ -69,6 +77,28 @@ object API {
             }
 
             if (response.status != HttpStatusCode.OK) return response.status
+            if (response.status == HttpStatusCode.Unauthorized) {
+                window.location.href = "/login${address.code}"
+                return response.status
+            }
+            onSuccess()
+        } catch (e: Exception) {
+            return null
+        }
+
+        return HttpStatusCode.OK
+    }
+
+    suspend fun deleteAddress(code: String, onSuccess: suspend () -> Unit = {}): HttpStatusCode? {
+        checkAuth(code)
+
+        try {
+            val response = client.delete("$URL/address/$code")
+            if (response.status != HttpStatusCode.OK) return response.status
+            if (response.status == HttpStatusCode.Unauthorized) {
+                window.location.href = "/login$code"
+                return response.status
+            }
             onSuccess()
         } catch (e: Exception) {
             return null
@@ -104,6 +134,15 @@ object API {
         }
 
         return HttpStatusCode.OK
+    }
+
+    suspend fun checkAuth(code: String) {
+        if (cookieExists("token")) return
+        if (!cookieExists("refreshToken")) {
+            window.location.href = "/login/$code"
+        }
+
+        loginToken() onFail { window.location.href = "/login/$code" }
     }
 
     suspend infix fun HttpStatusCode?.onFail(action: suspend (HttpStatusCode?) -> Unit) {
