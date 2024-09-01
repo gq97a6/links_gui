@@ -1,11 +1,12 @@
 package net.hostunit
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.onClick
+import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +66,72 @@ fun BoxScope.Notification(text: String, trigger: Boolean) {
             }
         }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun BoxScope.Popup(
+    text: String,
+    isShown: Boolean,
+    secondaryActionLabel: String = "",
+    secondaryAction: () -> Unit = {},
+    primaryActionLabel: String = "Potwierdź",
+    primaryAction: () -> Unit,
+) {
+    AnimatedVisibility(
+        isShown,
+        modifier = Modifier.align(Alignment.TopCenter),
+        enter = fadeIn(),
+        exit = fadeOut(),
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(color = colorScheme.background.copy(.7f)).onClick {
+
+            }
+        )
+    }
+
+    AnimatedVisibility(
+        isShown,
+        modifier = Modifier.align(Alignment.TopCenter),
+        enter = fadeIn() + slideInVertically(),
+        exit = slideOutVertically() + fadeOut(),
+    ) {
+        ElevatedCard(Modifier.padding(top = 150.dp)) {
+            Column(
+                Modifier.padding(30.dp).padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text, color = colorScheme.primary, fontSize = 30.sp, fontWeight = FontWeight.Medium)
+
+                Row(Modifier.padding(top = 20.dp)) {
+
+                    if (secondaryActionLabel != "") OutlinedButton(
+                        modifier = Modifier,
+                        onClick = secondaryAction
+                    ) {
+                        Text(text = secondaryActionLabel, maxLines = 1, modifier = Modifier.padding(horizontal = 15.dp))
+                    }
+
+                    Spacer(Modifier.width(30.dp))
+
+                    FilledTonalButton(
+                        modifier = Modifier,
+                        onClick = primaryAction
+                    ) {
+                        Text(text = primaryActionLabel, maxLines = 1, modifier = Modifier.padding(horizontal = 15.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    //Box(
+    //    modifier = Modifier.fillMaxSize().background(color = colorScheme.background.copy(.8f)),
+    //    contentAlignment = Alignment.Center
+    //) {
+    //
+    //}
 }
 
 @Composable
