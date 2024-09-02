@@ -1,12 +1,12 @@
 package net.hostunit.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 
 @Composable
-fun Theme(isDark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun Theme(isDark: Boolean = true, content: @Composable () -> Unit) {
 
+    //isSystemInDarkTheme()
     val colorScheme = if (isDark) DarkColorScheme else LightColorScheme
 
     MaterialTheme(

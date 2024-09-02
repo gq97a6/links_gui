@@ -1,6 +1,7 @@
 package net.hostunit.pages
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,6 +34,7 @@ fun RowScope.LinkCard(i: Int, address: Address, notify: (String) -> Unit) {
             .aspectRatio(1f)
             .alpha(if (!address.links.getOrNull(i)?.payload.isNullOrBlank()) 1f else 0.3f)
             .border(1.dp, colorScheme.primaryContainer, shapes.large)
+            .clip(shapes.large)
             .clickable(enabled = !address.links.getOrNull(i)?.payload.isNullOrBlank()) {
                 when (address.links[i].action) {
                     Link.Action.COPY -> {
