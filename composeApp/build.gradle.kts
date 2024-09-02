@@ -42,7 +42,6 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:3.0.0-wasm2")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1-wasm0")
             implementation("org.jetbrains.compose.material3:material3-wasm-js:1.6.11")
-
         }
     }
 }

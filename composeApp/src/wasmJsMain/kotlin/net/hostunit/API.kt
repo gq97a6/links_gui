@@ -15,7 +15,7 @@ import net.hostunit.classes.Address
 import net.hostunit.classes.User
 
 object API {
-    private val URL = window.location.let { it.protocol + "//" + it.hostname }
+    private val URL = window.location.let { it.protocol + "//" + it.hostname + "/api" }
 
     private val client = HttpClient(Js) {
         install(ContentNegotiation) {
