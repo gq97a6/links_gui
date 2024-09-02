@@ -57,7 +57,6 @@ fun BoxScope.EditPage(param: String = "") {
     var id by remember { mutableStateOf("") }
     var code by remember { mutableStateOf(param.parseCode()) }
     var direct by remember { mutableStateOf(false) }
-    var permanent by remember { mutableStateOf(false) }
     var random by remember { mutableStateOf(true) }
     var newCode by remember { mutableStateOf("") }
     var actions = remember { mutableStateListOf<Int>(0, 0, 0, 0) }
@@ -82,7 +81,6 @@ fun BoxScope.EditPage(param: String = "") {
         id = address.id
         code = address.code
         direct = address.direct
-        permanent = address.permanent
         address.links.forEachIndexed { i, link ->
             slots[i] = link.payload
             actions[i] = link.action.ordinal
@@ -98,7 +96,6 @@ fun BoxScope.EditPage(param: String = "") {
         //Reset UI
         code = ""
         direct = false
-        permanent = false
         random = true
         newCode = ""
         actions.forEachIndexed { i, _ -> actions[i] = 0 }
@@ -138,7 +135,6 @@ fun BoxScope.EditPage(param: String = "") {
             } else scope.launch {
                 val address = Address(
                     "",
-                    permanent,
                     direct
                 )
 
@@ -149,8 +145,7 @@ fun BoxScope.EditPage(param: String = "") {
                 }
 
                 API.postAddress(address) {
-                    address.code = it
-                    onSetupEditMode(address)
+                    onSetupEditMode(it)
                     notiPayload = "Utworzono nowy adres"
                     notiTrigger = !notiTrigger
                 } onFail {
@@ -170,7 +165,6 @@ fun BoxScope.EditPage(param: String = "") {
             scope.launch {
                 val address = Address(
                     id,
-                    permanent,
                     direct,
                     code
                 )
@@ -278,11 +272,6 @@ fun BoxScope.EditPage(param: String = "") {
                         actions[0] = 1
                     })
                     Text("Bezpośredni", color = colorScheme.primary)
-
-                    Spacer(Modifier.width(30.dp))
-
-                    Checkbox(permanent, { permanent = it })
-                    Text("Permanentny", color = colorScheme.primary)
 
                     if (mode == EditPageMode.NEW) {
                         Spacer(Modifier.width(30.dp))

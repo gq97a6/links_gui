@@ -37,7 +37,7 @@ fun String.match(pattern: String, content: @Composable (List<String>) -> Unit): 
     return true
 }
 
-fun String.parseCode() = this.uppercase().filter { it.isDigit() || it.isLetter() }
+fun String.parseCode() = this.filter { it.isDigit() }
 
 fun cookieExists(cookieName: String): Boolean {
     if (document.cookie.isEmpty()) return false

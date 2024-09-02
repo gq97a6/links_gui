@@ -44,7 +44,7 @@ object API {
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun postAddress(address: Address, onSuccess: suspend (String) -> Unit = {}): HttpStatusCode? {
+    suspend fun postAddress(address: Address, onSuccess: suspend (Address) -> Unit = {}): HttpStatusCode? {
         checkAuth(address.code)
 
         try {
