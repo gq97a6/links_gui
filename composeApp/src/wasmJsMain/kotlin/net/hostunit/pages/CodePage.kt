@@ -76,19 +76,20 @@ fun BoxScope.CodePage(param: String = "") {
     var notiPayload by remember { mutableStateOf("") }
     var notiTrigger by remember { mutableStateOf(false) }
 
-    fun onSearch(code: String) {
+    fun onSearch(_code: String) {
         scope.launch {
-            if (code.isNotEmpty()) API.getAddress(code) {
+            if (_code.isNotEmpty()) API.getAddress(_code) {
                 address = it
 
                 //Use first link if address is direct
                 if (it.direct) window.location.href = it.links[0].payload
 
                 cardsShown = true
-                window.history.replaceState(null, "", "/$code")
+                window.history.replaceState(null, "", "/$_code")
             } onFail {
                 window.history.replaceState(null, "", "/")
                 cardsShown = false
+                code = ""
                 notiPayload = "Ten adres nie istnieje"
                 notiTrigger = !notiTrigger
             }
