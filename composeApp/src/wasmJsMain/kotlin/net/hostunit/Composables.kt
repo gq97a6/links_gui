@@ -125,13 +125,6 @@ fun BoxScope.Popup(
             }
         }
     }
-
-    //Box(
-    //    modifier = Modifier.fillMaxSize().background(color = colorScheme.background.copy(.8f)),
-    //    contentAlignment = Alignment.Center
-    //) {
-    //
-    //}
 }
 
 @Composable
